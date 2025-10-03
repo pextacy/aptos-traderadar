@@ -11,6 +11,7 @@ import {
   Tooltip,
   Legend,
   Filler,
+  TooltipItem,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import { PricePoint } from '@/lib/traderadar/types';
@@ -77,7 +78,7 @@ export function PriceChart({ symbol, prices, currentPrice }: PriceChartProps) {
         mode: 'index' as const,
         intersect: false,
         callbacks: {
-          label: (context: any) => {
+          label: (context: TooltipItem<'line'>) => {
             return `Price: $${context.parsed.y.toFixed(2)}`;
           },
         },
@@ -99,7 +100,7 @@ export function PriceChart({ symbol, prices, currentPrice }: PriceChartProps) {
           color: 'rgba(255, 255, 255, 0.1)',
         },
         ticks: {
-          callback: (value: any) => `$${value.toFixed(2)}`,
+          callback: (value: string | number) => `$${Number(value).toFixed(2)}`,
         },
       },
     },

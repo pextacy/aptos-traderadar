@@ -21,8 +21,8 @@ export function useMerkleData() {
         if (!mounted) return;
 
         // Convert Merkle pairs to TokenData format
-        const formattedData: TokenData[] = pairsData.map((pair: any) => ({
-          symbol: pair.symbol || pair.name,
+        const formattedData: TokenData[] = pairsData.map((pair: MerklePair) => ({
+          symbol: pair.symbol,
           price: parseFloat(pair.markPrice || pair.indexPrice || '0'),
           priceChange24h: parseFloat(pair.priceChange24h || '0'),
           volume24h: parseFloat(pair.volume24h || '0'),
@@ -60,7 +60,7 @@ export function useMerkleData() {
 }
 
 export function useMerkleMarket(symbol: string) {
-  const [marketData, setMarketData] = useState<any>(null);
+  const [marketData, setMarketData] = useState<MerklePair | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

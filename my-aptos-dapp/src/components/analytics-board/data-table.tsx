@@ -71,7 +71,7 @@ export function DataTable<TData, TValue>({
       sorting,
       pagination,
     },
-    pageCount: Math.ceil(data?.total || 0 / pageSize),
+    pageCount: Math.ceil((data?.total || 0) / pageSize),
     enableRowSelection: true,
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
@@ -85,7 +85,7 @@ export function DataTable<TData, TValue>({
   });
 
   if (isLoading) {
-    <div>Loading...</div>;
+    return <div>Loading...</div>;
   }
 
   if (isError) {

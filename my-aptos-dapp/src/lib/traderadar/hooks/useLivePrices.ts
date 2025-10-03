@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { PricePoint } from '../types';
+import { getMerkleMarketData } from '../merkleClient';
 
 export function useLivePrices(symbol: string, maxPoints: number = 50) {
   const [prices, setPrices] = useState<PricePoint[]>([]);
@@ -13,48 +14,55 @@ export function useLivePrices(symbol: string, maxPoints: number = 50) {
     if (!symbol) return;
 
     let mounted = true;
+    const ws = wsRef.current;
 
-    // Simulated WebSocket connection for live prices
-    // In production, use: new MerkleWebsocketClient() from SDK
-    function simulateLivePrices() {
-      const basePrice = symbol.includes('BTC') ? 65000 :
-                       symbol.includes('ETH') ? 3200 :
-                       symbol.includes('APT') ? 8.5 : 1;
+    // Fetch real price data from Merkle API
+    async function fetchLivePrices() {
+      try {
+        const marketData = await getMerkleMarketData(symbol);
 
-      const interval = setInterval(() => {
         if (!mounted) return;
 
-        const variation = (Math.random() - 0.5) * (basePrice * 0.001); // 0.1% variation
-        const newPrice = basePrice + variation;
+        if (marketData) {
+          const price = parseFloat(marketData.markPrice || marketData.indexPrice || '0');
 
-        const pricePoint: PricePoint = {
-          timestamp: Date.now(),
-          price: newPrice,
-          volume: Math.random() * 1000000,
-        };
+          const pricePoint: PricePoint = {
+            timestamp: Date.now(),
+            price,
+            volume: parseFloat(marketData.volume24h || '0'),
+          };
 
-        setPrices(prev => {
-          const updated = [...prev, pricePoint];
-          if (updated.length > maxPoints) {
-            return updated.slice(-maxPoints);
-          }
-          return updated;
-        });
+          setPrices(prev => {
+            const updated = [...prev, pricePoint];
+            if (updated.length > maxPoints) {
+              return updated.slice(-maxPoints);
+            }
+            return updated;
+          });
 
-        setCurrentPrice(newPrice);
+          setCurrentPrice(price);
+        }
+
         setLoading(false);
-      }, 1000); // Update every second
-
-      return interval;
+      } catch (error) {
+        console.error('Error fetching live prices:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
     }
 
-    const interval = simulateLivePrices();
+    // Initial fetch
+    fetchLivePrices();
+
+    // Poll for updates every 2 seconds
+    const interval = setInterval(fetchLivePrices, 2000);
 
     return () => {
       mounted = false;
       clearInterval(interval);
-      if (wsRef.current) {
-        wsRef.current.close();
+      if (ws) {
+        ws.close();
       }
     };
   }, [symbol, maxPoints]);
@@ -70,33 +78,40 @@ export function useMultipleLivePrices(symbols: string[]) {
   useEffect(() => {
     let mounted = true;
 
-    function simulateMultiplePrices() {
-      const basePrices: Record<string, number> = {
-        'BTC_USD': 65000,
-        'ETH_USD': 3200,
-        'APT_USD': 8.5,
-        'SOL_USD': 145,
-      };
+    async function fetchMultiplePrices() {
+      try {
+        const pricePromises = symbols.map(async (symbol) => {
+          const marketData = await getMerkleMarketData(symbol);
+          const price = marketData
+            ? parseFloat(marketData.markPrice || marketData.indexPrice || '0')
+            : 0;
+          return { symbol, price };
+        });
 
-      const interval = setInterval(() => {
+        const results = await Promise.all(pricePromises);
+
         if (!mounted) return;
 
         const updated: Record<string, number> = {};
-
-        symbols.forEach(symbol => {
-          const basePrice = basePrices[symbol] || 1;
-          const variation = (Math.random() - 0.5) * (basePrice * 0.001);
-          updated[symbol] = basePrice + variation;
+        results.forEach(({ symbol, price }) => {
+          updated[symbol] = price;
         });
 
         setPricesMap(updated);
         setLoading(false);
-      }, 1000);
-
-      return interval;
+      } catch (error) {
+        console.error('Error fetching multiple live prices:', error);
+        if (mounted) {
+          setLoading(false);
+        }
+      }
     }
 
-    const interval = simulateMultiplePrices();
+    // Initial fetch
+    fetchMultiplePrices();
+
+    // Poll for updates every 3 seconds
+    const interval = setInterval(fetchMultiplePrices, 3000);
 
     return () => {
       mounted = false;

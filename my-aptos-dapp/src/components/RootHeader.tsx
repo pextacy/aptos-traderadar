@@ -12,9 +12,15 @@ export const RootHeader = () => {
       <div className="absolute left-1/2 transform -translate-x-1/2 flex gap-10">
         <a
           href="/analytics"
-          className="text-base text-muted-foreground font-medium leading-none"
+          className="text-base text-muted-foreground font-medium leading-none hover:text-foreground transition-colors"
         >
           Analytics
+        </a>
+        <a
+          href="/traderadar"
+          className="text-base text-muted-foreground font-medium leading-none hover:text-foreground transition-colors"
+        >
+          Trade Radar
         </a>
       </div>
       <div className="flex space-x-2 items-center justify-center">

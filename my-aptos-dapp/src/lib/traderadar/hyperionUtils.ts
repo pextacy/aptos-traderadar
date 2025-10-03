@@ -2,6 +2,7 @@
 
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import { HyperionPool } from './types';
+import { getPairPrices } from './priceOracle';
 
 // Hyperion pool addresses on Aptos testnet
 const HYPERION_POOLS = {
@@ -65,19 +66,14 @@ export async function getHyperionPoolData(symbol: string): Promise<HyperionPool 
   const reserves = await getPoolReserves(poolAddress);
   if (!reserves) return null;
 
-  // Mock price data - in production, fetch from oracle or API
-  const mockPrices = {
-    'APT/USDC': [8.5, 1.0],
-    'BTC/USD': [65000, 1.0],
-    'ETH/USD': [3200, 1.0],
-  };
-
-  const [price0, price1] = mockPrices[symbol as keyof typeof mockPrices] || [1, 1];
+  // Fetch real prices from CoinGecko oracle
+  const [price0, price1] = await getPairPrices(symbol);
   const tvl = calculateTVL(reserves.reserve0, reserves.reserve1, price0, price1);
 
-  // Mock volume - in production, fetch from indexer
-  const volume24h = tvl * 0.15; // Assume 15% daily volume/TVL ratio
-  const fee = 0.003; // 0.3% swap fee
+  // Estimate 24h volume based on TVL
+  // In production, this would come from the indexer tracking swap events
+  const volume24h = tvl * 0.15; // Conservative 15% daily volume/TVL ratio
+  const fee = 0.003; // 0.3% swap fee (standard for most DEXs)
   const apr = calculateAPR(volume24h, tvl, fee);
 
   return {
