@@ -4,23 +4,6 @@
 
 Real-time analytics dashboard + Telegram bot aggregating **Merkle Trade** ($26B+ volume) and **Hyperion** ($130M+ TVL) data. One-click trading with sub-second finality on Aptos.
 
----
-
-## 🎯 Hackathon Track: **Trading & Market Infrastructure**
-
-TradeRadar aligns with the **"Build the Future of DeFi on Aptos"** track, showcasing advanced composability with Aptos-native platforms. Leveraging Aptos' sub-second finality and parallel execution, we deliver a snappy, mobile-first experience targeting mass adoption in high-remittance markets.
-
-### ✅ **Hackathon Goals Achieved**
-
-- **CLOB Integration**: Direct Merkle Trade perpetual futures integration
-- **Analytics Dashboard**: Real-time Hyperion + Merkle data aggregation
-- **Composability**: Seamless integration between Merkle Trade and Hyperion
-- **Mobile-First UX**: Telegram bot for mass adoption
-- **Technical Innovation**: Leveraging Aptos' parallel execution and Move language
-- **Real-World Utility**: Targeting high-remittance markets for DeFi adoption
-
----
-
 ## 🏆 Key Features
 
 ### 💹 **Advanced Trading Infrastructure**
@@ -190,8 +173,7 @@ aptos-traderadar/
 - [Aptos SDK Documentation](https://aptos.dev/sdks/ts-sdk/)
 - [Hyperion Protocol](https://hyperion.money)
 - [CTRL+MOVE Hackathon](https://dorahacks.io/hackathon/ctrl-move)
-- [Project Demo Video](#) *(Coming Soon)*
-- [Live Demo](https://aptos-traderadar.vercel.app) *(Coming Soon)*
+
 
 ---
 
@@ -199,18 +181,5 @@ aptos-traderadar/
 
 Building the future of DeFi infrastructure on Aptos - One trade at a time!
 
-**University Team**: [Your University Name Here]
-
-For hackathon submission inquiries, contact: [Your Email Here]
-
----
-
-## 🏅 Targeting Prizes
-
-- **Main Track**: Build the Future of DeFi on Aptos
-- **Best Tech Implementation**: Advanced use of Aptos stack with parallel execution and Move contracts
-- **Top University Team**: Student-led innovation in DeFi infrastructure
-
----
 
 **Built with ❤️ for the CTRL+MOVE Hackathon | Powered by Aptos**
