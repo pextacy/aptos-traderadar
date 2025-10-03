@@ -62,17 +62,16 @@ export async function fetchTokenPrice(symbol: string): Promise<number> {
   } catch (error) {
     console.error(`Error fetching price for ${symbol}:`, error);
 
-    // Return fallback prices if API fails
-    const fallbackPrices: Record<string, number> = {
-      'APT': 8.5,
-      'BTC': 65000,
-      'ETH': 3200,
-      'USDC': 1.0,
-      'USDT': 1.0,
-      'USD': 1.0,
-    };
+    // Return cached value if available, otherwise return 0
+    const cached = PRICE_CACHE.get(symbol);
+    if (cached) {
+      console.warn(`Using cached price for ${symbol} (age: ${Date.now() - cached.timestamp}ms)`);
+      return cached.price;
+    }
 
-    return fallbackPrices[symbol.toUpperCase()] || 1.0;
+    // No fallback prices - return 0 to indicate unavailable data
+    console.error(`No price data available for ${symbol}`);
+    return 0;
   }
 }
 
@@ -127,18 +126,16 @@ export async function fetchMultipleTokenPrices(symbols: string[]): Promise<Recor
   } catch (error) {
     console.error('Error fetching multiple prices:', error);
 
-    // Return fallback prices
-    const fallbackPrices: Record<string, number> = {
-      'APT': 8.5,
-      'BTC': 65000,
-      'ETH': 3200,
-      'USDC': 1.0,
-      'USDT': 1.0,
-      'USD': 1.0,
-    };
-
+    // Return cached values if available, otherwise return 0
     validSymbols.forEach(symbol => {
-      prices[symbol] = fallbackPrices[symbol.toUpperCase()] || 1.0;
+      const cached = PRICE_CACHE.get(symbol);
+      if (cached) {
+        console.warn(`Using cached price for ${symbol} (age: ${Date.now() - cached.timestamp}ms)`);
+        prices[symbol] = cached.price;
+      } else {
+        console.error(`No price data available for ${symbol}`);
+        prices[symbol] = 0;
+      }
     });
 
     return prices;
@@ -153,14 +150,14 @@ export async function getPairPrices(pairSymbol: string): Promise<[number, number
   const [token0, token1] = pairSymbol.split('/');
 
   if (!token0 || !token1) {
-    console.warn(`Invalid pair symbol: ${pairSymbol}`);
-    return [1, 1];
+    console.error(`Invalid pair symbol: ${pairSymbol}`);
+    return [0, 0];
   }
 
   const prices = await fetchMultipleTokenPrices([token0, token1]);
 
   return [
-    prices[token0] || 1,
-    prices[token1] || 1,
+    prices[token0] || 0,
+    prices[token1] || 0,
   ];
 }

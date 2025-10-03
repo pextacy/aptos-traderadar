@@ -68,7 +68,7 @@ export function TradeModal({ open, onOpenChange, symbol, currentPrice }: TradeMo
     try {
       // Build trade payload
       const payload = await buildTradePayload(
-        account.address,
+        account.address.toString(),
         symbol,
         sizeNum,
         direction === 'long',

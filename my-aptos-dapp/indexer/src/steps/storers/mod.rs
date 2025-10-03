@@ -6,3 +6,5 @@ pub mod create_trade_event_storer;
 pub mod update_trade_event_storer;
 pub mod complete_trade_event_storer;
 pub mod cancel_trade_event_storer;
+pub mod hyperion_pool_storer;
+pub mod hyperion_swap_storer;

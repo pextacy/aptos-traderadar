@@ -109,6 +109,88 @@ diesel::table! {
     }
 }
 
+diesel::table! {
+    hyperion_pools (pool_address) {
+        #[max_length = 300]
+        pool_address -> Varchar,
+        #[max_length = 300]
+        token0_address -> Varchar,
+        #[max_length = 300]
+        token1_address -> Varchar,
+        #[max_length = 50]
+        token0_symbol -> Varchar,
+        #[max_length = 50]
+        token1_symbol -> Varchar,
+        fee_tier -> Int4,
+        tick_spacing -> Int4,
+        #[max_length = 100]
+        liquidity -> Varchar,
+        #[max_length = 100]
+        sqrt_price_x96 -> Varchar,
+        tick -> Int4,
+        creation_timestamp -> Int8,
+        last_update_timestamp -> Int8,
+        last_update_version -> Int8,
+    }
+}
+
+diesel::table! {
+    hyperion_swaps (swap_id) {
+        #[max_length = 400]
+        swap_id -> Varchar,
+        #[max_length = 300]
+        pool_address -> Varchar,
+        #[max_length = 300]
+        sender -> Varchar,
+        #[max_length = 300]
+        recipient -> Varchar,
+        #[max_length = 300]
+        token_in -> Varchar,
+        #[max_length = 300]
+        token_out -> Varchar,
+        #[max_length = 100]
+        amount_in -> Varchar,
+        #[max_length = 100]
+        amount_out -> Varchar,
+        #[max_length = 100]
+        sqrt_price_x96_after -> Varchar,
+        #[max_length = 100]
+        liquidity_after -> Varchar,
+        tick_after -> Int4,
+        tx_version -> Int8,
+        event_idx -> Int8,
+        timestamp -> Int8,
+    }
+}
+
+diesel::table! {
+    hyperion_pool_stats (pool_address) {
+        #[max_length = 300]
+        pool_address -> Varchar,
+        #[max_length = 100]
+        tvl_usd -> Varchar,
+        #[max_length = 100]
+        volume_24h -> Varchar,
+        #[max_length = 100]
+        volume_7d -> Varchar,
+        #[max_length = 100]
+        fees_24h -> Varchar,
+        #[max_length = 100]
+        fees_7d -> Varchar,
+        #[max_length = 50]
+        apr -> Varchar,
+        swap_count_24h -> Int8,
+        swap_count_7d -> Int8,
+        unique_traders_24h -> Int8,
+        unique_traders_7d -> Int8,
+        #[max_length = 100]
+        last_price -> Varchar,
+        #[max_length = 50]
+        price_change_24h -> Varchar,
+        last_update_timestamp -> Int8,
+    }
+}
+
 diesel::allow_tables_to_appear_in_same_query!(
     ledger_infos,
     messages,
@@ -118,4 +200,7 @@ diesel::allow_tables_to_appear_in_same_query!(
     user_stats,
     trades,
     trader_stats,
+    hyperion_pools,
+    hyperion_swaps,
+    hyperion_pool_stats,
 );

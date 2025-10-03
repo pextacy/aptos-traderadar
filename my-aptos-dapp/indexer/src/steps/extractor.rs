@@ -17,6 +17,8 @@ use crate::db_models::{
     module_upgrade::ModuleUpgrade,
     package_upgrade::{PackageUpgrade, PackageUpgradeChangeOnChain},
     trade::{CreateTradeEventOnChain, UpdateTradeEventOnChain, CompleteTradeEventOnChain, CancelTradeEventOnChain, Trade},
+    hyperion_pool::{HyperionPool, PoolCreatedEventOnChain, PoolStateUpdateEventOnChain},
+    hyperion_swap::{HyperionSwap, SwapEventOnChain},
 };
 
 /// Extractor is a step that extracts events and their metadata from transactions.
@@ -133,6 +135,9 @@ pub enum ContractEvent {
     UpdateTradeEvent(Trade, i64),
     CompleteTradeEvent(Trade, i64),
     CancelTradeEvent(Trade, i64),
+    HyperionPoolCreated(HyperionPool),
+    HyperionPoolStateUpdate(HyperionPool),
+    HyperionSwap(HyperionSwap),
 }
 
 impl ContractEvent {
@@ -230,6 +235,72 @@ impl ContractEvent {
                 Some(ContractEvent::UpdateMessageEvent(
                     update_message_event_on_chain.to_db_message(event_idx as i64),
                 ))
+            }
+            // Hyperion pool_v3 events
+            else if t.starts_with("0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c::pool_v3") {
+                if t.contains("PoolCreated") || t.contains("CreatePool") {
+                    println!("HyperionPoolCreatedEvent {}", event.data.as_str());
+                    match serde_json::from_str::<PoolCreatedEventOnChain>(event.data.as_str()) {
+                        Ok(pool_created_event) => {
+                            Some(ContractEvent::HyperionPoolCreated(
+                                HyperionPool::from_pool_created_event(
+                                    &pool_created_event,
+                                    event_idx as i64,
+                                )
+                            ))
+                        },
+                        Err(e) => {
+                            println!("Failed to parse PoolCreatedEvent: {}", e);
+                            None
+                        }
+                    }
+                } else if t.contains("Swap") || t.contains("SwapEvent") || t.contains("swap") {
+                    println!("HyperionSwapEvent {}", event.data.as_str());
+                    match serde_json::from_str::<SwapEventOnChain>(event.data.as_str()) {
+                        Ok(swap_event) => {
+                            Some(ContractEvent::HyperionSwap(
+                                HyperionSwap::from_swap_event(
+                                    &swap_event,
+                                    event_idx as i64,
+                                    event.sequence_number as i64,
+                                )
+                            ))
+                        },
+                        Err(e) => {
+                            println!("Failed to parse SwapEvent: {}", e);
+                            None
+                        }
+                    }
+                } else if t.contains("PoolStateUpdate") || t.contains("LiquidityChange") {
+                    println!("HyperionPoolStateUpdateEvent {}", event.data.as_str());
+                    match serde_json::from_str::<PoolStateUpdateEventOnChain>(event.data.as_str()) {
+                        Ok(state_update_event) => {
+                            let mut pool = HyperionPool::from_pool_created_event(
+                                &PoolCreatedEventOnChain {
+                                    pool_address: state_update_event.pool_address.clone(),
+                                    token0: "".to_string(),
+                                    token1: "".to_string(),
+                                    token0_symbol: "".to_string(),
+                                    token1_symbol: "".to_string(),
+                                    fee: "0".to_string(),
+                                    tick_spacing: "0".to_string(),
+                                    sqrt_price_x96: state_update_event.sqrt_price_x96.clone(),
+                                    tick: state_update_event.tick.clone(),
+                                    timestamp: state_update_event.timestamp.clone(),
+                                },
+                                event_idx as i64,
+                            );
+                            pool.update_from_state_event(&state_update_event, event_idx as i64);
+                            Some(ContractEvent::HyperionPoolStateUpdate(pool))
+                        },
+                        Err(e) => {
+                            println!("Failed to parse PoolStateUpdateEvent: {}", e);
+                            None
+                        }
+                    }
+                } else {
+                    None
+                }
             } else {
                 None
             }

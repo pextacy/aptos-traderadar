@@ -18,6 +18,8 @@ use super::{
         update_trade_event_storer::process_update_trade_events,
         complete_trade_event_storer::process_complete_trade_events,
         cancel_trade_event_storer::process_cancel_trade_events,
+        hyperion_pool_storer::process_hyperion_pool_events,
+        hyperion_swap_storer::process_hyperion_swap_events,
     },
 };
 use crate::utils::database_utils::ArcDbPool;
@@ -56,9 +58,9 @@ impl Processable for Storer {
     ) -> Result<Option<TransactionContext<TransactionContextData>>, ProcessorError> {
         let per_table_chunk_sizes: AHashMap<String, usize> = AHashMap::new();
         let data = transaction_context_data.data.clone();
-        let (create_msg_events, update_msg_events, create_trade_events, update_trade_events, complete_trade_events, cancel_trade_events) = data.events.into_iter().fold(
-            (vec![], vec![], vec![], vec![], vec![], vec![]),
-            |(mut create_msg, mut update_msg, mut create_trade, mut update_trade, mut complete_trade, mut cancel_trade), event| {
+        let (create_msg_events, update_msg_events, create_trade_events, update_trade_events, complete_trade_events, cancel_trade_events, hyperion_pools, hyperion_swaps) = data.events.into_iter().fold(
+            (vec![], vec![], vec![], vec![], vec![], vec![], vec![], vec![]),
+            |(mut create_msg, mut update_msg, mut create_trade, mut update_trade, mut complete_trade, mut cancel_trade, mut h_pools, mut h_swaps), event| {
                 match event {
                     ContractEvent::CreateMessageEvent(message) => {
                         create_msg.push(message);
@@ -78,8 +80,14 @@ impl Processable for Storer {
                     ContractEvent::CancelTradeEvent(trade, seq) => {
                         cancel_trade.push((trade, seq));
                     }
+                    ContractEvent::HyperionPoolCreated(pool) | ContractEvent::HyperionPoolStateUpdate(pool) => {
+                        h_pools.push(pool);
+                    }
+                    ContractEvent::HyperionSwap(swap) => {
+                        h_swaps.push(swap);
+                    }
                 }
-                (create_msg, update_msg, create_trade, update_trade, complete_trade, cancel_trade)
+                (create_msg, update_msg, create_trade, update_trade, complete_trade, cancel_trade, h_pools, h_swaps)
             },
         );
 
@@ -122,6 +130,20 @@ impl Processable for Storer {
             self.pool.clone(),
             per_table_chunk_sizes.clone(),
             cancel_trade_events,
+        )
+        .await?;
+
+        process_hyperion_pool_events(
+            self.pool.clone(),
+            per_table_chunk_sizes.clone(),
+            hyperion_pools,
+        )
+        .await?;
+
+        process_hyperion_swap_events(
+            self.pool.clone(),
+            per_table_chunk_sizes.clone(),
+            hyperion_swaps,
         )
         .await?;
 

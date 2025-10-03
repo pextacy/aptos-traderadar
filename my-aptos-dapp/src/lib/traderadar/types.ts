@@ -33,6 +33,7 @@ export interface HyperionPool {
   volume24h: number;
   apr: number;
   fee: number;
+  priceChange24h?: number;
 }
 
 export interface TokenData {

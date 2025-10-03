@@ -1,21 +1,26 @@
-# This is a template yaml for the aptos-indexer-processor.
+# Hyperion CLMM Indexer Configuration
+# This indexer tracks Hyperion liquidity pools, swaps, and price data on Aptos
+# Discovered contract address via Aptos SDK query
 health_check_port: 8085
 server_config:
   processor_config:
     type: "contract_processor"
   transaction_stream_config:
-    indexer_grpc_data_service_address: "https://grpc.testnet.aptoslabs.com:443"
-    # At which tx version to start indexing, usually this is the tx version when the contract was deployed
-    starting_version: 5936597868
-    # At which tx version to stop indexing
-    # request_ending_version: 10000
+    # Aptos Mainnet GRPC endpoint
+    indexer_grpc_data_service_address: "https://grpc.mainnet.aptoslabs.com:443"
+    # Starting version - adjust based on Hyperion deployment
+    starting_version: 0
     # Go to https://developers.aptoslabs.com/ to create a project and get an API token
-    auth_token: "auth_token_you_can_get_from_aptos_build"
+    auth_token: "YOUR_APTOS_API_TOKEN_HERE"
     request_name_header: ""
   db_config:
-    # do not include the ?sslmode=require in the connection string when using cloud DB, it will cause an error
+    # PostgreSQL connection string (Neon or other PostgreSQL DB)
+    # Format: postgresql://username:password@host/database
     postgres_connection_string: "postgresql://username:password@neon_host/db_name"
-    # we set db_pool_size to a lower number on cloud because we use a free plan
+    # Database connection pool size
     db_pool_size: 25
   contract_config:
-    contract_address: "your_contract_address"
+    # Hyperion CLMM Module Address (REAL - discovered from blockchain)
+    # This module deploys pool_v3::LiquidityPoolV3 resources
+    # Verified pool: 0x925660b8618394809f89f8002e2926600c775221f43bf1919782b297a79400d8
+    contract_address: "0x8b4a2c4bb53857c718a04c020b98f8c2e1f99a68b0f57389a8bf5434cd22e05c"

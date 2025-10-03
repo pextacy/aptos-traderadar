@@ -6,3 +6,6 @@ pub mod processor_status;
 pub mod user_stat;
 pub mod trade;
 pub mod trader_stat;
+pub mod hyperion_pool;
+pub mod hyperion_swap;
+pub mod hyperion_pool_stat;

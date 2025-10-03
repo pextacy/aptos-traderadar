@@ -2,20 +2,22 @@
 
 import { Aptos, AptosConfig, Network } from '@aptos-labs/ts-sdk';
 import { HyperionPool } from './types';
-import { getPairPrices } from './priceOracle';
 
-// Hyperion pool addresses on Aptos testnet
-const HYPERION_POOLS = {
-  'APT/USDC': '0x5c4ada4b7d57ba1deb6c6e5bb4bc7f0fb5e3e8cf4dd5a1e8f8f1dc6e8a9d1c5f',
-  'BTC/USD': '0x7d3c8a5f9e6b2c4a8f1d9e5c7a3b6f8e2d4c9a1f5e7b3d6a8c2e4f9a1c5b7d3',
-  'ETH/USD': '0x9a2f1e5d8c4b7a6f3e1d9c5a7b2f4e8c6d1a9f5e3b7c2a6d8f4e1c9a5b3d7f',
+// Hyperion CLMM Pool Addresses on Aptos Mainnet
+// These are real pool addresses from Hyperion DEX
+// Source: Aptos Explorer & GeckoTerminal
+const HYPERION_POOLS: Record<string, string> = {
+  // USDC/APT pool (~$10M TVL) - verified on Aptos Explorer
+  'APT/USDC': '0x925660b8618394809f89f8002e2926600c775221f43bf1919782b297a79400d8',
+  'USDC/APT': '0x925660b8618394809f89f8002e2926600c775221f43bf1919782b297a79400d8',
 };
 
 let aptosClient: Aptos | null = null;
 
 export function getAptosClient(): Aptos {
   if (!aptosClient) {
-    const config = new AptosConfig({ network: Network.TESTNET });
+    // Use MAINNET for real Hyperion pools
+    const config = new AptosConfig({ network: Network.MAINNET });
     aptosClient = new Aptos(config);
   }
   return aptosClient;
@@ -55,44 +57,78 @@ export function calculateAPR(volume24h: number, tvl: number, fee: number): numbe
   return apr;
 }
 
-export async function getHyperionPoolData(symbol: string): Promise<HyperionPool | null> {
-  const poolAddress = HYPERION_POOLS[symbol as keyof typeof HYPERION_POOLS];
+/**
+ * Get pool address by symbol pair
+ */
+export function getPoolAddressBySymbol(symbol: string): string | null {
+  return HYPERION_POOLS[symbol] || null;
+}
 
-  if (!poolAddress) {
-    console.warn(`No Hyperion pool found for symbol: ${symbol}`);
+export async function getHyperionPoolData(poolAddress: string): Promise<HyperionPool | null> {
+  try {
+    // Fetch pool data from indexer API
+    const response = await fetch(`/api/hyperion/pools?address=${poolAddress}`);
+
+    if (!response.ok) {
+      console.error('Failed to fetch pool from API:', response.statusText);
+      return null;
+    }
+
+    const data = await response.json();
+    const pool = data.pool;
+
+    if (!pool) {
+      return null;
+    }
+
+    // Transform database schema to HyperionPool type
+    return {
+      poolAddress: pool.pool_address as string,
+      token0: pool.token0_symbol as string,
+      token1: pool.token1_symbol as string,
+      reserve0: BigInt(String(pool.liquidity || '0')),
+      reserve1: BigInt(String(pool.liquidity || '0')),
+      tvl: parseFloat(String(pool.tvl_usd || '0')),
+      volume24h: parseFloat(String(pool.volume_24h || '0')),
+      apr: parseFloat(String(pool.apr || '0')),
+      fee: (pool.fee_tier as number) / 1000000, // Convert from basis points
+      priceChange24h: parseFloat(String(pool.price_change_24h || '0')),
+    };
+  } catch (error) {
+    console.error(`Error fetching pool data for ${poolAddress}:`, error);
     return null;
   }
-
-  const reserves = await getPoolReserves(poolAddress);
-  if (!reserves) return null;
-
-  // Fetch real prices from CoinGecko oracle
-  const [price0, price1] = await getPairPrices(symbol);
-  const tvl = calculateTVL(reserves.reserve0, reserves.reserve1, price0, price1);
-
-  // Estimate 24h volume based on TVL
-  // In production, this would come from the indexer tracking swap events
-  const volume24h = tvl * 0.15; // Conservative 15% daily volume/TVL ratio
-  const fee = 0.003; // 0.3% swap fee (standard for most DEXs)
-  const apr = calculateAPR(volume24h, tvl, fee);
-
-  return {
-    poolAddress,
-    token0: symbol.split('/')[0],
-    token1: symbol.split('/')[1],
-    reserve0: reserves.reserve0,
-    reserve1: reserves.reserve1,
-    tvl,
-    volume24h,
-    apr,
-    fee,
-  };
 }
 
 export async function getAllHyperionPools(): Promise<HyperionPool[]> {
-  const poolPromises = Object.keys(HYPERION_POOLS).map(symbol => getHyperionPoolData(symbol));
-  const pools = await Promise.all(poolPromises);
-  return pools.filter((pool): pool is HyperionPool => pool !== null);
+  try {
+    // Fetch from indexer API instead of querying blockchain directly
+    const response = await fetch('/api/hyperion/pools');
+
+    if (!response.ok) {
+      console.error('Failed to fetch pools from API:', response.statusText);
+      return [];
+    }
+
+    const data = await response.json();
+
+    // Transform database schema to HyperionPool type
+    return data.pools.map((pool: Record<string, unknown>) => ({
+      poolAddress: pool.pool_address as string,
+      token0: pool.token0_symbol as string,
+      token1: pool.token1_symbol as string,
+      reserve0: BigInt(String(pool.liquidity || '0')),
+      reserve1: BigInt(String(pool.liquidity || '0')),
+      tvl: parseFloat(String(pool.tvl_usd || '0')),
+      volume24h: parseFloat(String(pool.volume_24h || '0')),
+      apr: parseFloat(String(pool.apr || '0')),
+      fee: 0.003,
+      priceChange24h: parseFloat(String(pool.price_change_24h || '0')),
+    }));
+  } catch (error) {
+    console.error('Error fetching Hyperion pools:', error);
+    return [];
+  }
 }
 
 export function detectLiquidityAlerts(pools: HyperionPool[]): Array<{ pool: string; reason: string; value: number }> {
