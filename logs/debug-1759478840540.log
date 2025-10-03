@@ -1,0 +1,2 @@
+{"timestamp":"2025-10-03T08:07:20.540Z","level":"info","message":"Debug logger initialized","sessionId":"1759478840540","debugEnabled":false,"logLevel":"info","environment":"production"}
+{"timestamp":"2025-10-03T08:07:20.551Z","level":"info","message":"Session started","sessionId":"1759478840539","type":"session_start","model":"deepseek/deepseek-chat-v3.1:free"}
