@@ -16,7 +16,8 @@
       "Bash(npm run typecheck:*)",
       "WebSearch",
       "WebFetch(domain:explorer.aptoslabs.com)",
-      "WebFetch(domain:docs.hyperion.xyz)"
+      "WebFetch(domain:docs.hyperion.xyz)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []

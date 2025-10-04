@@ -4,12 +4,17 @@ import React, { useEffect, useState } from 'react';
 import { TokenScreener } from '@/components/traderadar/TokenScreener';
 import { PriceChart } from '@/components/traderadar/PriceChart';
 import { TradeModal } from '@/components/traderadar/TradeModal';
+import { MarketOverview } from '@/components/traderadar/MarketOverview';
+import { AlertsPanel } from '@/components/traderadar/AlertsPanel';
+import { LiveSwapFeed } from '@/components/traderadar/LiveSwapFeed';
+import { VolumeChart } from '@/components/traderadar/VolumeChart';
 import { TokenData, PricePoint } from '@/lib/traderadar/types';
 import { fetchMultipleTokenPrices } from '@/lib/traderadar/priceOracle';
 import { getAllHyperionPools } from '@/lib/traderadar/hyperionUtils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Info, BarChart3, AlertTriangle, Activity } from 'lucide-react';
 
 export default function TradeRadarPage() {
   const [tokenData, setTokenData] = useState<TokenData[]>([]);
@@ -152,64 +157,105 @@ export default function TradeRadarPage() {
 
       {tokenData.length > 0 && (
         <>
-          <div className="grid gap-6 lg:grid-cols-2">
-            {selectedToken && (
-              <div className="lg:col-span-2">
-                <PriceChart
-                  symbol={selectedToken.symbol}
-                  prices={priceHistory}
-                  currentPrice={selectedToken.price}
-                />
-              </div>
-            )}
+          <Tabs defaultValue="overview" className="space-y-6">
+            <TabsList className="grid w-full max-w-md grid-cols-3">
+              <TabsTrigger value="overview" className="gap-2">
+                <BarChart3 className="h-4 w-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="alerts" className="gap-2">
+                <AlertTriangle className="h-4 w-4" />
+                Alerts
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="gap-2">
+                <Activity className="h-4 w-4" />
+                Activity
+              </TabsTrigger>
+            </TabsList>
 
-            <div className="lg:col-span-2">
-              <TokenScreener
-                data={tokenData}
-                onSelectToken={handleSelectToken}
-              />
-            </div>
+            <TabsContent value="overview" className="space-y-6">
+              <MarketOverview />
 
-            {selectedToken && selectedToken.tvl && (
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Pool Information - {selectedToken.symbol}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Value Locked</p>
-                        <p className="text-2xl font-bold">
-                          ${selectedToken.tvl.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">24h Volume</p>
-                        <p className="text-2xl font-bold">
-                          ${selectedToken.volume24h.toLocaleString()}
-                        </p>
-                      </div>
-                      {selectedToken.apr && (
-                        <div>
-                          <p className="text-sm text-muted-foreground">APR</p>
-                          <p className="text-2xl font-bold text-green-500">
-                            {selectedToken.apr.toFixed(2)}%
-                          </p>
+              <div className="grid gap-6 lg:grid-cols-2">
+                {selectedToken && (
+                  <div className="lg:col-span-2">
+                    <PriceChart
+                      symbol={selectedToken.symbol}
+                      prices={priceHistory}
+                      currentPrice={selectedToken.price}
+                    />
+                  </div>
+                )}
+
+                <div className="lg:col-span-2">
+                  <TokenScreener
+                    data={tokenData}
+                    onSelectToken={handleSelectToken}
+                  />
+                </div>
+
+                {selectedToken && selectedToken.tvl && (
+                  <div className="lg:col-span-2">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Pool Information - {selectedToken.symbol}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <p className="text-sm text-muted-foreground">Total Value Locked</p>
+                            <p className="text-2xl font-bold">
+                              ${selectedToken.tvl.toLocaleString()}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">24h Volume</p>
+                            <p className="text-2xl font-bold">
+                              ${selectedToken.volume24h.toLocaleString()}
+                            </p>
+                          </div>
+                          {selectedToken.apr && (
+                            <div>
+                              <p className="text-sm text-muted-foreground">APR</p>
+                              <p className="text-2xl font-bold text-green-500">
+                                {selectedToken.apr.toFixed(2)}%
+                              </p>
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-sm text-muted-foreground">Source</p>
+                            <p className="text-lg font-semibold capitalize">
+                              {selectedToken.source}
+                            </p>
+                          </div>
                         </div>
-                      )}
-                      <div>
-                        <p className="text-sm text-muted-foreground">Source</p>
-                        <p className="text-lg font-semibold capitalize">
-                          {selectedToken.source}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </TabsContent>
+
+            <TabsContent value="alerts" className="space-y-6">
+              <AlertsPanel />
+
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="lg:col-span-2">
+                  <VolumeChart />
+                </div>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="activity" className="space-y-6">
+              <div className="grid gap-6 lg:grid-cols-2">
+                <LiveSwapFeed limit={25} />
+
+                <div className="space-y-6">
+                  <VolumeChart />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
 
           {selectedToken && (
             <TradeModal
